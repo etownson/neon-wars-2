@@ -1,3 +1,5 @@
+import { getSprite, blitSprite } from './ship.js';
+
 export class Particle {
   constructor(x, y, color) {
     const a = Math.random() * Math.PI * 2;
@@ -25,13 +27,18 @@ export class Particle {
 
   draw(ctx) {
     const t = this.life / this.maxLife;
+    // Pre-rendered glow dot (size bucketed to 1-3px); blitting is far
+    // cheaper than a shadowBlur fill per particle.
+    const size = Math.max(1, Math.round(this.size));
+    const s = getSprite(`dot|${size}|${this.color}`, size / 2 + 12, (g) => {
+      g.fillStyle = this.color;
+      g.shadowColor = this.color;
+      g.shadowBlur = 8;
+      g.fillRect(-size / 2, -size / 2, size, size);
+    });
     ctx.globalAlpha = t;
-    ctx.fillStyle = this.color;
-    ctx.shadowColor = this.color;
-    ctx.shadowBlur = 8;
-    ctx.fillRect(this.x - this.size / 2, this.y - this.size / 2, this.size, this.size);
+    blitSprite(ctx, s, this.x, this.y, 0);
     ctx.globalAlpha = 1;
-    ctx.shadowBlur = 0;
   }
 }
 

@@ -63,12 +63,16 @@ export class Player {
     if (this.fireCooldown > 0) this.fireCooldown -= dt;
   }
 
-  /** Spawn a bullet from the muzzle; caller owns the returned bullet. */
-  fire() {
-    const mx = this.x + Math.cos(this.angle) * (this.radius + 6);
-    const my = this.y + Math.sin(this.angle) * (this.radius + 6);
+  /**
+   * Spawn a bullet from the muzzle; caller owns the returned bullet.
+   * `offset` tilts the shot off the ship's aim (spread-shot).
+   */
+  fire(offset = 0) {
+    const a = this.angle + offset;
+    const mx = this.x + Math.cos(a) * (this.radius + 6);
+    const my = this.y + Math.sin(a) * (this.radius + 6);
     this.fireCooldown = FIRE_COOLDOWN;
-    return new Bullet(mx, my, Math.cos(this.angle) * BULLET_SPEED, Math.sin(this.angle) * BULLET_SPEED);
+    return new Bullet(mx, my, Math.cos(a) * BULLET_SPEED, Math.sin(a) * BULLET_SPEED);
   }
 
   hit() {

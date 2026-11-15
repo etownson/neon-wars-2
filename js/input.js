@@ -6,9 +6,11 @@
  *   Right stick = aim, auto-fires once deflected past the deadzone
  *   RT (button 7) = fire in last-aimed direction
  *   Start (9) / A (0) = pause (while playing) or restart (game over)
+ *   B (1)             = use bomb
  *
- * Keyboard: WASD move, arrow keys aim + auto-fire, Enter action, P pause.
- * Mouse: aim at cursor, hold left button to fire.
+ * Keyboard: WASD move, arrow keys aim + auto-fire, Enter action, P pause,
+ *           Space bomb.
+ * Mouse: aim at cursor, hold left button to fire, right button bomb.
  */
 
 const DEADZONE = 0.25;
@@ -22,9 +24,9 @@ function deadzone(v, dz = DEADZONE) {
 export class Input {
   constructor() {
     this.keys = new Set();
-    this.mouse = { x: 0, y: 0, down: false, used: false };
+    this.mouse = { x: 0, y: 0, down: false, right: false, used: false };
     this.padIndex = null;
-    this.prev = { start: false, pause: false };
+    this.prev = { start: false, pause: false, bomb: false };
 
     window.addEventListener('keydown', (e) => {
       if (e.repeat) return;
@@ -43,10 +45,17 @@ export class Input {
         this.mouse.down = true;
         this.mouse.used = true;
       }
+      if (e.button === 2) {
+        this.mouse.right = true;
+        this.mouse.used = true;
+      }
     });
     window.addEventListener('mouseup', (e) => {
       if (e.button === 0) this.mouse.down = false;
+      if (e.button === 2) this.mouse.right = false;
     });
+    // Right-click is the bomb trigger; suppress the context menu.
+    window.addEventListener('contextmenu', (e) => e.preventDefault());
 
     window.addEventListener('gamepadconnected', (e) => {
       this.padIndex = e.gamepad.index;
@@ -82,6 +91,7 @@ export class Input {
       aimAngle: -Math.PI / 2,
       actionPressed: false, // Start / A / Enter edge: pause or restart
       pausePressed: false, // P key edge
+      bombPressed: false, // B / Space / right-click edge: use a bomb
     };
 
     // --- Movement: left stick, fallback WASD ---
@@ -153,6 +163,14 @@ export class Input {
     const pauseNow = this.keys.has('KeyP');
     out.pausePressed = pauseNow && !this.prev.pause;
     this.prev.pause = pauseNow;
+
+    // --- Bomb edge: B (1), Space, right mouse ---
+    const bombNow =
+      (pad && pad.buttons[1] && pad.buttons[1].pressed) ||
+      this.keys.has('Space') ||
+      this.mouse.right;
+    out.bombPressed = bombNow && !this.prev.bomb;
+    this.prev.bomb = bombNow;
 
     return out;
   }
